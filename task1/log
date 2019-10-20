@@ -1,0 +1,23 @@
+clf = RandomForestRegressor(bootstrap=True, criterion='mse', max_depth=5,
+           max_features=220, max_leaf_nodes=None,
+           min_impurity_decrease=0.0, min_impurity_split=None,
+           min_samples_leaf=1, min_samples_split=2,
+           min_weight_fraction_leaf=0.0, n_estimators=200, n_jobs=None,
+           oob_score=False, random_state=0, verbose=0, warm_start=False)
+
+cv score = [0.50970593 0.43673221 0.37814027 0.45167107 0.45396361]
+Accuracy: 0.45 (+/- 0.08)
+score on entire train : 0.2833495402198942
+score on validation set : 0.3624242995845013
+
+max_depth = 6
+cv score = [0.51785461 0.45116354 0.38839758 0.46540923 0.45300917]
+Accuracy: 0.46 (+/- 0.08)
+score on entire train : 0.5183095138670257
+score on validation set : 0.5841876573696232
+
+max_depth = 7
+cv score = [0.52345632 0.45262782 0.38532945 0.46124964 0.46501096]
+Accuracy: 0.46 (+/- 0.09)
+score on entire train : 0.6727026656503916
+score on validation set : 0.7072504268775464
