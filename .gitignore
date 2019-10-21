@@ -18,6 +18,3 @@ task1/y_pred_svr_f_reg.csv
 task1/y_pred_svr.csv
 task1/y_pred.csv
 task1/y_train.csv
-task1/result_arxiv/hard_bl.py
-task1/result_arxiv/main_mi_rf.py
-task1/result_arxiv/medium_base.py
