@@ -55,7 +55,7 @@ unique, counts = np.unique(labels,return_counts=True)
 class_counts = dict(zip(unique,counts))
 
 
-scaler = PowerTransformer()
+scaler = StandardScaler()
 
 scaler.fit(data)
 X = scaler.transform(data)
