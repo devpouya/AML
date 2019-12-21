@@ -100,7 +100,7 @@ def plot_confusion_matrix(y_true, y_pred,
 
 np.set_printoptions(precision=2)
 def make_training_data_for_subject(data_input,subject,training_or_test='training'):
-
+    
     file_name_eeg1 = 'extracted_features_eeg1_'
     file_name_eeg2 = 'extracted_features_eeg2_'
     file_name_emg = 'extracted_features_emg_'
@@ -228,45 +228,22 @@ def make_training_data_for_subject(data_input,subject,training_or_test='training
             data_input[21600 * ind + i,:,2*breadth+16:3*breadth,2] = data_emg[i,:,0:16].copy()
             data_input[21600 * ind + i,:,3*breadth:4*breadth,2] = data_emg[i-1].copy()
             data_input[21600 * ind + i,:,4*breadth:5*breadth,2] = data_emg[i-1].copy()
-
-        del hf_eeg1
-        del data_eeg1
-
-        del hf_eeg2
-        del data_eeg2
-
-        del hf_emg
-        del data_emg
+        
     return data_input
-
+    
 label_path = "train_labels.csv"
 df_labels = pd.read_csv(label_path)
 
 labels = df_labels.values
 labels = labels[:,1]
-del df_labels
 
 def count_instances(labels):
     unique, counts = np.unique(labels,return_counts=True)
     return dict(zip(unique,counts))
 
 class_counts = count_instances(labels)
-print("Class 1 Counts: {}".format(class_counts[1]))
-print("Class 2 Counts: {}".format(class_counts[2]))
-print("Class 3 Counts: {}".format(class_counts[3]))
 
-print("object1 labels")
-class_counts = count_instances(labels[0:21600])
-print("Class 1 Counts: {}".format(class_counts[1]))
-print("Class 2 Counts: {}".format(class_counts[2]))
-print("Class 3 Counts: {}".format(class_counts[3]))
-print("object2 labels")
-class_counts = count_instances(labels[21600:43200])
-print("Class 1 Counts: {}".format(class_counts[1]))
-print("Class 2 Counts: {}".format(class_counts[2]))
-print("Class 3 Counts: {}".format(class_counts[3]))
-print("object2 labels")
-class_counts = count_instances(labels[43200:64800])
+# print("Class 0 Counts: {}".format(class_counts[0]))
 print("Class 1 Counts: {}".format(class_counts[1]))
 print("Class 2 Counts: {}".format(class_counts[2]))
 print("Class 3 Counts: {}".format(class_counts[3]))
@@ -327,108 +304,34 @@ def plot_confusion_matrix(y_true, y_pred,
 
 np.set_printoptions(precision=2)
 
-# data = np.zeros((64800, 24, 160, 3))
-# data = make_training_data_for_subject(data_input=data, subject=[0,1,2],training_or_test='training')
+data = np.zeros((64800, 24, 160, 3))
+data = make_training_data_for_subject(data_input=data, subject=[0,1,2],training_or_test='training')
 
 
 from keras import backend as K
 
-true_positives = np.sum(np.round(np.clip(np.array([0, 2, 3])*np.array([2, 2, 2]), 0, 1)))
-print("check some true positives")
-print(true_positives)
-
 def recall_m(y_true, y_pred):
-    # any tensorflow metric
-    value, update_op = tf.contrib.metrics.streaming_recall(y_true, y_pred)
-
-    # find all variables created for this metric
-    metric_vars = [i for i in tf.local_variables() if 'recall_m' in i.name.split('/')[1]]
-
-    # Add metric variables to GLOBAL_VARIABLES collection.
-    # They will be initialized for new session.
-    for v in metric_vars:
-        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
-
-    # force to update metric values
-    with tf.control_dependencies([update_op]):
-        value = tf.identity(value)
-        return value
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+        recall = true_positives / (possible_positives + K.epsilon())
+        return recall
 
 def precision_m(y_true, y_pred):
-    # any tensorflow metric
-    value, update_op = tf.contrib.metrics.streaming_precision(y_true, y_pred)
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+        precision = true_positives / (predicted_positives + K.epsilon())
+        return precision
 
-    # find all variables created for this metric
-    metric_vars = [i for i in tf.local_variables() if 'precision_m' in i.name.split('/')[1]]
-
-    # Add metric variables to GLOBAL_VARIABLES collection.
-    # They will be initialized for new session.
-    for v in metric_vars:
-        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
-
-    # force to update metric values
-    with tf.control_dependencies([update_op]):
-        value = tf.identity(value)
-        return value
-
-# def f1_m(y_true, y_pred):
-    # precision = precision_m(y_true, y_pred)
-    # recall = recall_m(y_true, y_pred)
-    # return 2*((precision*recall)/(precision+recall+K.epsilon()))
-    # return tf.contrib.metrics.f1_score(y_true, y_pred)
 def f1_m(y_true, y_pred):
-    # any tensorflow metric
-    value, update_op = tf.contrib.metrics.f1_score(y_true, y_pred)
-
-    # find all variables created for this metric
-    metric_vars = [i for i in tf.local_variables() if 'f1_m' in i.name.split('/')[1]]
-
-    # Add metric variables to GLOBAL_VARIABLES collection.
-    # They will be initialized for new session.
-    for v in metric_vars:
-        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
-
-    # force to update metric values
-    with tf.control_dependencies([update_op]):
-        value = tf.identity(value)
-        return value
-
-def balanced_acc_backend(y_true, y_pred):
-    y_true = K.argmax(y_true, axis = 1)
-    y_pred = K.argmax(y_pred, axis = 1)
-    # now working under ordinary label instead of one-hot representation
-    # datatype should be int for both now.
-    acc_sum = K.cast(0, dtype='float32')
-    for class_label in [0,1,2]:
-        shape = K.shape(y_true)[0]
-        empty_index = K.arange(0, shape)
-
-        indices = empty_index[tf.math.equal(y_true, class_label)]
-
-        y_true_class_label = tf.keras.backend.gather(y_true, indices)
-        y_pred_corresponds = tf.keras.backend.gather(y_pred, indices)
-
-        acc_sum = acc_sum + tf.contrib.metrics.accuracy(y_true_class_label, y_pred_corresponds)
-
-    return acc_sum/3.0
+    precision = precision_m(y_true, y_pred)
+    recall = recall_m(y_true, y_pred)
+    return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 def balanced_acc(y_true, y_pred):
-    # any tensorflow metric
-    _, update_op = tf.contrib.metrics.f1_score(y_true, y_pred)
-    value = balanced_acc_backend(y_true, y_pred)
-
-    # find all variables created for this metric
-    metric_vars = [i for i in tf.local_variables() if 'balanced_acc' in i.name.split('/')[1]]
-
-    # Add metric variables to GLOBAL_VARIABLES collection.
-    # They will be initialized for new session.
-    for v in metric_vars:
-        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
-
-    # force to update metric values
-    with tf.control_dependencies([update_op]):
-        value = tf.identity(value)
-        return value
+    return [K.mean([
+        (y_true[pred_idx] == K.round(y_pred_single)) for pred_idx, y_pred_single in enumerate(y_pred)
+      if y_true[pred_idx] == class_label
+                    ]) for class_label in keras.utils.to_categorical([0,1,2])]
 
 def focal_loss(gamma=2., alpha=.25):
 	def focal_loss_fixed(y_true, y_pred):
@@ -438,31 +341,6 @@ def focal_loss(gamma=2., alpha=.25):
 	return focal_loss_fixed
 
 # def minortiy_acc(y_true, y_pred):
-def auc_roc(y_true, y_pred):
-    # any tensorflow metric
-    value, update_op = tf.contrib.metrics.streaming_auc(y_pred, y_true)
-
-    # find all variables created for this metric
-    metric_vars = [i for i in tf.local_variables() if 'auc_roc' in i.name.split('/')[1]]
-
-    # Add metric variables to GLOBAL_VARIABLES collection.
-    # They will be initialized for new session.
-    for v in metric_vars:
-        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
-
-    # force to update metric values
-    with tf.control_dependencies([update_op]):
-        value = tf.identity(value)
-        return value
-
-# def bal_acc(y_true, y_pred):
-#     num_unique_labels = tf.shape(tf.unique(y_true))[0]
-#     labels = tf.unique(y_true)
-#     sum_acc = 0
-#     # for i in range(num_unique_labels):
-#
-#     return sum_acc/num_unique_labels
-
 
 
 print("check some entries")
@@ -512,40 +390,29 @@ def make_CNN_small():
 
     #add model layers
     # model.add(Conv2D(64, kernel_size=3, activation='relu', input_shape = (24,160,3)))
-    # model.add( MaxPooling2D(pool_size=(3, 2), strides=(3,2), padding='valid', data_format=None, input_shape= (24, 160, 3)) )
+    model.add( MaxPooling2D(pool_size=(3, 2), strides=(3,2), padding='valid', data_format=None, input_shape= (24, 160, 3)) )
 
-    model.add(Conv2D(32, kernel_size=3, activation='relu',
-                        kernel_initializer='he_normal',
-                        kernel_regularizer=l2(1e-4)
-                     ,  input_shape = (24,160,3)
+    model.add(Conv2D(64, kernel_size=3, activation='relu'
+                     # , input_shape = (24,160,3)
                      ))
 
     model.add( MaxPooling2D(pool_size=(2, 2), strides=(2,2), padding='valid', data_format=None) )
-    model.add(BatchNormalization())
-    model.add(Conv2D(32, kernel_size=3,
-                     kernel_initializer='he_normal',
-                     kernel_regularizer=l2(1e-4),
-                     activation='relu'))
-    model.add(BatchNormalization())
-    model.add(Dense(200,
+    model.add(BatchNormalization(axis=1))
+    model.add(Conv2D(32, kernel_size=3, activation='relu'))
+
+    model.add(Dense(1024,
                     activation='relu',
                     kernel_initializer='he_uniform' ))
-    model.add(BatchNormalization())
+    model.add(BatchNormalization(axis=1))
     model.add(Dropout(0.5))
-
-    # model.add(Dense(1000,
-    #                 activation='relu',
-    #                 kernel_initializer='he_uniform' ))
-    # model.add(BatchNormalization(axis=1))
-    # model.add(Dropout(0.5))
 
     model.add(Flatten())
     model.add(Dense(3))
     model.add(Activation('softmax'))
 
-    opt = keras.optimizers.adam(learning_rate= 0.00005, beta_1=0.9, beta_2=0.99, amsgrad=False)
+    opt = keras.optimizers.adam(learning_rate= 0.0005, beta_1=0.9, beta_2=0.99, amsgrad=False)
     # model.compile(optimizer=opt, loss=focal_loss(alpha=.25, gamma=2), metrics=['accuracy', f1_m])
-    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy', f1_m, auc_roc, balanced_acc])
+    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy', f1_m])
 
     return model
 
@@ -560,10 +427,9 @@ def make_CNN_mathi():
     model.add(Dense(3))
     model.add(Activation('softmax'))
 
-    # opt = keras.optimizers.adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, amsgrad=False)
+    opt = keras.optimizers.adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, amsgrad=False)
     # model.compile(optimizer='adam', loss=focal_loss(alpha=.25, gamma=2), metrics=['accuracy', f1_m])
-    model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy', f1_m, auc_roc, balanced_acc])
-
+    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy', f1_m])
 
     return model
 
@@ -688,26 +554,7 @@ def make_resnet():
     model = resnet_v1((24, 160, 3), 8, 3)
     opt = keras.optimizers.adam(learning_rate= 0.0005, beta_1=0.9, beta_2=0.99, amsgrad=False)
     # model.compile(optimizer=opt, loss=focal_loss(alpha=.25, gamma=2), metrics=['accuracy', f1_m])
-    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy', f1_m, auc_roc, balanced_acc])
-
-    return model
-
-def make_best_net():
-    model = Sequential()
-    model.add(MaxPooling2D(pool_size=(2, 3), strides=(2,3), padding='valid', data_format=None, input_shape= (24, 160, 3)) )
-    model.add(Conv2D(20, kernel_size=3, strides=(1,1), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2,2), padding='valid', data_format=None) )
-
-    model.add(Flatten())
-    model.add(Dense(1000, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(1000))
-    model.add(Dropout(0.5))
-    model.add(Dense(3, activation='softmax'))
-
-    opt = keras.optimizers.adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, amsgrad=False)
-    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy', recall_m, precision_m, f1_m, auc_roc, balanced_acc])
-
+    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy', f1_m])
     return model
 
 class CustomImagesGenerator:
@@ -792,7 +639,7 @@ def generate_batches(files, y, batch_size):
 
 
 batch_size = 100
-epochs = 3
+epochs = 2
 from sklearn.utils import class_weight
 from sklearn.metrics import balanced_accuracy_score
 
@@ -806,223 +653,109 @@ from sklearn.metrics import balanced_accuracy_score
 # y_train_splits = [y_train_0, y_train_1, y_train_2]
 # data = data/255.  #maybe will decrease memory consumption idk
 # X_train_0, X_train_1, X_train_2 = np.split(data, 3)
-# X_train_0, X_train_1, X_train_2 = np.split(data, 3)
 # X_train_splits = [X_train_0, X_train_1, X_train_2]
 
 # y = [np.hstack((y_train_1, y_train_2)), np.hstack((y_train_0, y_train_2)), np.hstack((y_train_0, y_train_1))]
 # X = [np.vstack((X_train_1, X_train_2)), np.vstack((X_train_0, X_train_2)), np.vstack((X_train_0, X_train_1))]
 
 ############################ cv #############################################
-# epochs = 3
-cv_score_epoch = [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
-# cv_score_epoch = [[0,0,0],[0,0,0],[0,0,0]]
-# for epochs in [7,6,5,4,3,2,1]:
-# for epochs in [3,2,1]:
-for epochs in [2]:
-    cv_acc_score = [0, 0, 0]
-    for i in [0, 1, 2]:
-        x_val = np.zeros((21600, 24, 160, 3))
-        x_train = np.zeros((43200, 24, 160, 3))
+
+cv_acc_score = [0, 0, 0]
+for i in [0, 1, 2]:
+    if i == 0:
+        x_val = data[0:21600]
+        x_train = data[21600:64800]
+        y_val = labels[0:21600] - 1
+        y_train = labels[21600:64800] - 1
+    elif i == 1:
+        x_val = data[21600:43200]
+        x_train = np.vstack((data[0:21600], data[43200:64800]))
+        y_val = labels[21600:43200] - 1
+        y_train = np.hstack((labels[0:21600], labels[43200:64800])) - 1
+    else:
+        x_val = data[43200:64800]
+        x_train = data[0:43200]
+        y_val = labels[43200:64800] - 1
+        y_train = labels[0:43200] - 1
 
 
-        # first load data then delete data. to avoid redundancy in memory consumption
-        if i == 0:
-            # data = np.zeros((64800, 24, 160, 3))
-            # data = make_training_data_for_subject(data_input=data, subject=[0, 1, 2], training_or_test='training')
-            # x_val = data[0:21600]
-            # x_train = data[21600:64800]
+    class_weights = class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)
+    print("class weights:")
+    print(class_weights)
+    print(np.unique(y_train))
 
-            x_val = make_training_data_for_subject(data_input=x_val, subject=[0], training_or_test='training')
-            x_train = make_training_data_for_subject(data_input=x_train, subject=[1,2], training_or_test='training')
-            y_val = labels[0:21600] - 1
-            y_train = labels[21600:64800] - 1
+    # one hot encoding
+    y_train = keras.utils.to_categorical(y_train, 3)
+    y_val = keras.utils.to_categorical(y_val, 3)
 
-            # del data
-        elif i == 1:
-            # data = np.zeros((64800, 24, 160, 3))
-            # data = make_training_data_for_subject(data_input=data, subject=[0, 1, 2], training_or_test='training')
-            # x_val = data[21600:43200]
-            # x_train = np.vstack((data[0:21600], data[43200:64800]))
+    model = make_resnet()
 
-            x_val = make_training_data_for_subject(data_input=x_val, subject=[1], training_or_test='training')
-            x_train = make_training_data_for_subject(data_input=x_train, subject=[0,2], training_or_test='training')
-            y_val = labels[21600:43200] - 1
-            y_train = np.hstack((labels[0:21600], labels[43200:64800])) - 1
+    from keras.preprocessing.image import ImageDataGenerator
+    # create a data generator
+    datagen = ImageDataGenerator()
 
-            # del data
-        else:
-            # data = np.zeros((64800, 24, 160, 3))
-            # data = make_training_data_for_subject(data_input=data, subject=[0, 1, 2], training_or_test='training')
-            # x_val = data[43200:64800]
-            # x_train = data[0:43200]
+    # rain_it = datagen.flow_from_directory('train/', class_mode='binary', batch_size=batch_size)
+    from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+    my_gen = CustomImagesGenerator(
+        x_train, y_train,
+        batch_size=batch_size
+    )
 
-            x_val = make_training_data_for_subject(data_input=x_val, subject=[2], training_or_test='training')
-            x_train = make_training_data_for_subject(data_input=x_train, subject=[0,1], training_or_test='training')
-            y_val = labels[43200:64800] - 1
-            y_train = labels[0:43200] - 1
+    es = EarlyStopping(monitor=f1_m, mode='max', patience=50)
 
+    # model.fit_generator(my_gen,
+    #                class_weight={0:class_weights[0], 1:class_weights[1], 2:class_weights[2]},
+    #                epochs = epochs,
+    #                steps_per_epoch= np.ceil(x_train.shape[0]/batch_size),
+    #                validation_data=(x_val, y_val),
+    #                verbose=1)
+    model.fit(x_train,y_train, batch_size=batch_size, epochs=epochs, verbose = 1, validation_data=(x_val, y_val), shuffle=True
+              , class_weight = {0:class_weights[0], 1:class_weights[1], 2:class_weights[2]})
 
-            # del data
+    # do cross validation on the left out
+    y_cv_val_pred = np.argmax(model.predict(x_val), axis=1)
+    cv_acc_score[i] = balanced_accuracy_score(np.argmax(y_val, axis=1), y_cv_val_pred)
+    print("the validation balanced accuracy on train split " + str(i) + "is:")
+    print(cv_acc_score[i])
 
-        # model = make_CNN_small()
-        # model = make_CNN_mathi()
-        # model = make_resnet()
-        model = make_best_net()
+    plot_confusion_matrix(np.argmax(y_val, axis=1), y_cv_val_pred,
+                          normalize=True,
+                          title="val_" + str(i),
+                          cmap=plt.cm.Blues)
+    plt.show()
 
-        from keras.preprocessing.image import ImageDataGenerator
-        # create a data generator
-        datagen = ImageDataGenerator()
+    plot_confusion_matrix(np.argmax(y_train, axis=1), np.argmax(model.predict(x_train),axis=1),
+                          normalize=True,
+                          title="train_" + str(i),
+                          cmap=plt.cm.Blues)
+    plt.show()
 
-        # rain_it = datagen.flow_from_directory('train/', class_mode='binary', batch_size=batch_size)
-        # from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-        # my_gen = CustomImagesGenerator(
-        #     x_train, y_train,
-        #     batch_size=batch_size
-        # )
-
-        # es = EarlyStopping(monitor=f1_m, mode='max', patience=50)
-
-        # model.fit_generator(my_gen,
-        #                class_weight={0:class_weights[0], 1:class_weights[1], 2:class_weights[2]},
-        #                epochs = epochs,
-        #                steps_per_epoch= np.ceil(x_train.shape[0]/batch_size),
-        #                validation_data=(x_val, y_val),
-        #                verbose=1)
-
-        # from imblearn.over_sampling import RandomOverSampler
-
-        # class_weights = class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)
-        # print("class weights:")
-        # print(class_weights)
-        # print(np.unique(y_train))
-
-        # class_counts = count_instances(y_train)
-        # print(class_counts)
-        # x_train = x_train.reshape(43200, -1)
-        # x_train, y_train = RandomOverSampler(
-        #     sampling_strategy={0: class_counts[0], 1: class_counts[1], 2: class_counts[2] * 2}).fit_resample(x_train, y_train)
-        # x_train= x_train.reshape(y_train.shape[0], 24,160,3)
-
-
-        class_weights = class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)
-        print("class weights:")
-        print(class_weights)
-        print(np.unique(y_train))
-
-        # print(x_train.shape)
-        # print(y_train.shape)
-        # class_counts = count_instances(y_train)
-        # print(class_counts)
-
-        # one hot encoding
-        y_train = keras.utils.to_categorical(y_train, 3)
-        y_val = keras.utils.to_categorical(y_val, 3)
-
-        es = EarlyStopping(monitor='f1_m', mode='max', patience=4, verbose=1)
-        mc = ModelCheckpoint("leaving_out"+str(i)+".h5", monitor='val_f1_m', mode='max', save_best_only=True, verbose=1)
-        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, verbose = 0, validation_data=(x_val, y_val), shuffle=True
-                  , class_weight = {0: class_weights[0], 1: class_weights[1], 2: class_weights[2]}, callbacks=[es, mc])
-                  # , class_weight = {0: 1, 1: 1, 2: 1}, callbacks=[es, mc])
-
-        # summarize history for accuracy
-        plt.plot(history.history['auc_roc'])
-        plt.plot(history.history['val_auc_roc'])
-        plt.title('model auc epoch'+str(epochs))
-        plt.ylabel('accuracy')
-        plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.show()
-
-        plt.plot(history.history['accuracy'])
-        plt.plot(history.history['val_accuracy'])
-        plt.title('model acc epoch'+str(epochs))
-        plt.ylabel('accuracy')
-        plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.show()
-
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('model loss epoch'+str(epochs))
-        plt.ylabel('loss')
-        plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.show()
-
-        plt.plot(history.history['f1_m'])
-        plt.plot(history.history['val_f1_m'])
-        plt.title('model f1 score epoch'+str(epochs))
-        plt.ylabel('f1')
-        plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.show()
-
-        # do cross validation on the left out
-        y_cv_val_pred = np.argmax(model.predict(x_val), axis=1)
-        cv_acc_score[i] = balanced_accuracy_score(np.argmax(y_val, axis=1), y_cv_val_pred)
-        print("the validation balanced accuracy on train split " + str(i) + "is:")
-        print(cv_acc_score[i])
-
-        plot_confusion_matrix(np.argmax(y_val, axis=1), y_cv_val_pred,
-                              normalize=True,
-                              title="val_" + str(i),
-                              cmap=plt.cm.Blues)
-        plt.show()
-
-        # plot_confusion_matrix(np.argmax(y_train, axis=1), np.argmax(model.predict(x_train),axis=1),
-        #                       normalize=True,
-        #                       title="train_" + str(i),
-        #                       cmap=plt.cm.Blues)
-        #
-        # plt.show()
-
-        print("validation score")
-        print(cv_acc_score[i])
-
-        # del model, x_train, y_train, x_val, y_val
-
-    print('trained with ' + str(epochs) + 'epochs')
-    print("average validation score")
-    print((cv_acc_score[0]+cv_acc_score[1]+cv_acc_score[2])/3.0)
-    print(cv_acc_score)
-
-    cv_score_epoch[epochs-1] = cv_acc_score
-    print("display validation score on all epochs")
-    print(cv_score_epoch)
-
-print("display validation score on all epochs")
-print(cv_score_epoch)
+print(cv_acc_score)
+#
 # del data
 ############################ cv #############################################
 
 ############################ train on all #####################################
-epochs = 2
-data = np.zeros((64800, 24, 160, 3))
-data = make_training_data_for_subject(data_input=data, subject=[0,1,2],training_or_test='training')
+train_files = []
+for i in range(60):
+    train_files.append("./train/" + "training_data_" + str(i) + ".h5")
 
-model = make_best_net()
+model = make_resnet()
 # gen = generate_batches(files=train_files, y = labels-1, batch_size=batch_size)
 class_weights_entire_train = class_weight.compute_class_weight('balanced', np.unique(labels-1), labels-1)
 # history = model.fit_generator(gen, steps_per_epoch=64800/batch_size, nb_epoch=epochs, verbose=1, class_weight=class_weights)
 # history = model.fit_generator(gen, steps_per_epoch=10, nb_epoch=epochs, verbose=1, class_weight=class_weights)
-
-# from imblearn.over_sampling import RandomOverSampler
-# class_counts = count_instances(labels)
-# data, labels = RandomOverSampler(
-#     sampling_strategy={0: class_counts[0], 1: class_counts[1], 2: class_counts[2]*2}).fit_resample(data, labels)
-
 model.fit(data, keras.utils.to_categorical(labels-1), batch_size=batch_size, epochs=epochs, verbose=1,
           shuffle=True
           , class_weight={0: class_weights_entire_train[0], 1: class_weights_entire_train[1], 2: class_weights_entire_train[2]})
 
 # np.savetxt('pre.csv', X2, delimiter = ',')
-del data
-del labels
-########################### train on all #####################################
+
+############################ train on all #####################################
 
 
 
-##############evaluation######################
+###############evaluation######################
 test_data = np.zeros((43200, 24, 160, 3))
 test_data = make_training_data_for_subject(data_input=test_data, subject=[0,1],training_or_test='testing')
 print("check test data shape")
@@ -1038,5 +771,3 @@ sample['y'] = prediction_test + 1
 print("after adding 1 back")
 print(sample['y'][0:10])
 sample.to_csv("y_full_train.csv", index = False)
-
-# print(cv_acc_score)
