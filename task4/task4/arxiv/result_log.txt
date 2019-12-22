@@ -7,6 +7,31 @@ mean (axis = 0)
 std (axis = 0)
 var (axis = 0)
 
+some statistics for reference
+object1 labels
+Class 1 Counts: 11240
+Class 2 Counts: 8653
+Class 3 Counts: 1707
+object2 labels
+Class 1 Counts: 11849
+Class 2 Counts: 8647
+Class 3 Counts: 1104
+object2 labels
+Class 1 Counts: 11025
+Class 2 Counts: 9833
+Class 3 Counts: 742
+
+submission 13's predictor says it thinks there are:
+test subject 1
+Class 1 Counts: 9977
+Class 2 Counts: 9828
+Class 3 Counts: 1795
+test subject 2
+Class 1 Counts: 10351
+Class 2 Counts: 9386
+Class 3 Counts: 1863
+
+
 -----------------------------------------------------------------------------------
 Both relu, 2 epochs, 7 runs submission 13
 [0.9161054114954948, 0.9663825927048841, 0.9580413570643785], 
