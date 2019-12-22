@@ -1,44 +1,11 @@
-format:
-the activation for last two dense layers,   num_epochs,   how many runs,   submission ID
-[cv_score1, cv_score2, cv_score3],
-... in total 7 runs
-
-mean (axis = 0)
-std (axis = 0)
-var (axis = 0)
-
-some statistics for reference
-object1 labels
-Class 1 Counts: 11240
-Class 2 Counts: 8653
-Class 3 Counts: 1707
-object2 labels
-Class 1 Counts: 11849
-Class 2 Counts: 8647
-Class 3 Counts: 1104
-object2 labels
-Class 1 Counts: 11025
-Class 2 Counts: 9833
-Class 3 Counts: 742
-
-submission 13's predictor says it thinks there are:
-test subject 1
-Class 1 Counts: 9977
-Class 2 Counts: 9828
-Class 3 Counts: 1795
-test subject 2
-Class 1 Counts: 10351
-Class 2 Counts: 9386
-Class 3 Counts: 1863
-
 -----------------------------------------------------------------------------------
-last check mathi net, sub18, public score 0.962399453452
+last check mathi net, sub18, public score 0.962399453452     (sub16 should also be sharing the same variance check as this one)
 [[0.894 , 0.9626, 0.9606], [0.9058, 0.9647, 0.9534], [0.915 , 0.9655, 0.9584], [0.897 , 0.9665, 0.9578], [0.8963, 0.9653, 0.9505], [0.9061, 0.9437, 0.9337], [0.8917, 0.9645, 0.9525], [0.9192, 0.9581, 0.9629], [0.904 , 0.9639, 0.9535], [0.9031, 0.9656, 0.9587]]
 mean: [0.90322, 0.96204, 0.9542 ]
 std:  [0.00844983, 0.0065111 , 0.00778113]
 var:  [7.13996e-05, 4.23944e-05, 6.05460e-05]
 -----------------------------------------------------------------------------------
-last check paper net, sub19, public score 0.958413852104
+last check paper net, sub19, public score 0.958413852104      (sub17 should also be sharing the same variance check as this one)
 [[0.8991, 0.9682, 0.9634], [0.9232, 0.9665, 0.9573], [0.9021, 0.9671, 0.9506], [0.8979, 0.9679, 0.9543], [0.9127, 0.9656, 0.9512], [0.9022, 0.9671, 0.9588], [0.9076, 0.9666, 0.9499], [0.9171, 0.9666, 0.9563], [0.8975, 0.9672, 0.9536], [0.9104, 0.9647, 0.9569]]
 mean  [0.907  0.9668 0.9552]
 std   [0.0083 0.001  0.004 ]
@@ -120,5 +87,38 @@ last check mathi net, sub18, public score 0.962399453452
 mean: [0.90322, 0.96204, 0.9542 ]
 std:  [0.00844983, 0.0065111 , 0.00778113]
 var:  [7.13996e-05, 4.23944e-05, 6.05460e-05]
+
+format:
+the activation for last two dense layers,   num_epochs,   how many runs,   submission ID
+[cv_score1, cv_score2, cv_score3],
+... in total 7 runs
+
+mean (axis = 0)
+std (axis = 0)
+var (axis = 0)
+
+some statistics for reference
+object1 labels
+Class 1 Counts: 11240
+Class 2 Counts: 8653
+Class 3 Counts: 1707
+object2 labels
+Class 1 Counts: 11849
+Class 2 Counts: 8647
+Class 3 Counts: 1104
+object2 labels
+Class 1 Counts: 11025
+Class 2 Counts: 9833
+Class 3 Counts: 742
+
+submission 13's predictor says it thinks there are:
+test subject 1
+Class 1 Counts: 9977
+Class 2 Counts: 9828
+Class 3 Counts: 1795
+test subject 2
+Class 1 Counts: 10351
+Class 2 Counts: 9386
+Class 3 Counts: 1863
 
 
